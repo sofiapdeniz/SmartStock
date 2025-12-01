@@ -1,0 +1,34 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Project_SmartStock/SmartStock/SmartStock/Dockerfile
+    container_name: smartstock_api
+    ports:
+      - "5000:8080"
+    depends_on:
+      - sqlserver
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=SmartStockDb;User=sa;Password=Admin@2025;TrustServerCertificate=True"
+    networks:
+      - appnet
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: smartstock_db
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Admin@2025"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserverdata:/var/opt/mssql
+    networks:
+      - appnet
+
+volumes:
+  sqlserverdata:
+
+networks:
+  appnet:
