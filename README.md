@@ -1,6 +1,6 @@
 # SmartStock - Setup Docker
 
-Este projeto **SmartStock** utiliza Docker para facilitar o desenvolvimento e a execução da API .NET 8 junto com o SQL Server 2022. Este README explica como configurar e rodar o projeto usando Docker.
+Este projeto **SmartStock** utiliza Docker para facilitar o desenvolvimento e a execução da API .NET 8 junto com o SQL Server 2022. Isso granate que qualquer pessoa possa rodar o projeto sem instalar o .NET ou SQL Server localmente, apenas usando Docker. Este README explica como configurar e rodar o projeto usando Docker.
 
 ---
 
@@ -121,5 +121,3 @@ docker exec -it smartstock_db bash
 * Porta da API no host: `5000` → porta da API no container: `8080`
 
 ---
-
-Isso garante que qualquer pessoa possa rodar o projeto sem instalar o .NET ou SQL Server localmente, apenas usando Docker.
