@@ -3,7 +3,7 @@ using static SmartStock.Models.PedidoVenda;
 
 namespace SmartStock.Models.SmartStock.Models.DTOs
 {
-    public class PedidoVendaPostDTO : EntidadeBase
+    public class PedidoVendaPostDTO
     {
         public string ClienteNome { get; set; }
         public decimal ValorTotal { get; set; }

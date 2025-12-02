@@ -1,12 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SmartStock.Data;
 using SmartStock.Models;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SmartStock.Repository
 {
     public class PedidoVendaRepository : IPedidoVendaRepository
     {
         private readonly DataContext _context;
+
         public PedidoVendaRepository(DataContext context)
         {
             _context = context;
@@ -15,21 +18,18 @@ namespace SmartStock.Repository
         public PedidoVenda Delete(int id)
         {
             var pedido = _context.PedidoVendaTable.FirstOrDefault(p => p.Id == id);
+            if (pedido == null) return null;
 
-            if (pedido == null)
-            {
-                return null;
-            }
-            
             _context.PedidoVendaTable.Remove(pedido);
             _context.SaveChanges();
-
             return pedido;
         }
 
-        public PedidoVenda? GetById(int id)
+        public PedidoVenda GetById(int id)
         {
-            return _context.PedidoVendaTable.FirstOrDefault(p => p.Id == id);
+            return _context.PedidoVendaTable
+                .Include(p => p.ItensPedido)
+                .FirstOrDefault(p => p.Id == id);
         }
 
         public List<PedidoVenda> GetPedidos()

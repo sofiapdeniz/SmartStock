@@ -12,6 +12,7 @@ namespace SmartStock.Repository
         Produto PatchProduto(int id, ProdutoPatchDTO produto);
         Produto Delete(int id);
 
-        Produto Update(Produto produto);
+        // Necessário para atualizar estoque
+        void Update(Produto produto);
     }
 }

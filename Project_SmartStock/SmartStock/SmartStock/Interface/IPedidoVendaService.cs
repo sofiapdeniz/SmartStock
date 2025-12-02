@@ -1,5 +1,6 @@
 ﻿using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
+using System.Collections.Generic;
 
 namespace SmartStock.Interface
 {
@@ -7,10 +8,9 @@ namespace SmartStock.Interface
     {
         List<PedidoVenda> GetPedidos();
         PedidoVenda GetById(int id);
-        PedidoVenda PostPedido(PedidoVendaPostDTO pedido);
-        PedidoVenda PutPedido(int id, PedidoVenda pedido);
+        PedidoVenda PostPedido(PedidoVendaPostDTO pedido);       // DTO
+        PedidoVenda PutPedido(int id, PedidoVendaPutDTO pedido); // DTO
         PedidoVenda PatchPedido(int id, PedidoVenda pedido);
         PedidoVenda Delete(int id);
-        
     }
 }

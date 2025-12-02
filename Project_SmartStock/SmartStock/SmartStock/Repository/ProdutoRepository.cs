@@ -52,7 +52,7 @@ namespace SmartStock.Repository
                 Descricao = dto.Descricao,
                 PrecoUnitario = dto.PrecoUnitario,
                 UnidadeMedida = dto.UnidadeMedida,
-                Estoque = 0, // inicializa o estoque como 0
+                Estoque = 0, // inicializa estoque
                 DataCriacao = DateTime.Now,
                 DataAtualizacao = DateTime.Now
             };
@@ -78,12 +78,11 @@ namespace SmartStock.Repository
             return produto;
         }
 
-        // NOVO: Atualiza produto existente (para o service atualizar o estoque)
-        public Produto Update(Produto produto)
+        // Atualiza produto existente (para o service atualizar o estoque)
+        public void Update(Produto produto)
         {
             _context.ProdutoTable.Update(produto);
             _context.SaveChanges();
-            return produto;
         }
     }
 }

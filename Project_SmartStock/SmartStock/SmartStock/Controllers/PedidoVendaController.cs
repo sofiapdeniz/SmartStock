@@ -1,12 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SmartStock.Data;
 using SmartStock.Interface;
 using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
-
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace SmartStock.Controllers
 {
@@ -21,7 +16,6 @@ namespace SmartStock.Controllers
             _pedidoService = pedidoService;
         }
 
-        // GET: api/<Pedido>
         [HttpGet]
         public IActionResult Get()
         {
@@ -29,17 +23,16 @@ namespace SmartStock.Controllers
             return Ok(pedidos);
         }
 
-        // GET api/<Pedido>/5
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
             var pedido = _pedidoService.GetById(id);
-
             if (pedido == null)
                 return NotFound(new { Message = $"Pedido com o Id={id} não encontrado" });
 
             return Ok(pedido);
         }
+
         [HttpPost]
         public IActionResult Post([FromBody] PedidoVendaPostDTO newPedido)
         {
@@ -54,24 +47,27 @@ namespace SmartStock.Controllers
             }
         }
 
-        // PUT api/<Pedido>/5
         [HttpPut("{id}")]
-        public IActionResult PutPedido(int id, [FromBody] Models.PedidoVenda pedido)
+        public IActionResult PutPedido(int id, [FromBody] PedidoVendaPutDTO dto)
         {
-            var atualizado = _pedidoService.PutPedido(id, pedido);
+            try
+            {
+                var atualizado = _pedidoService.PutPedido(id, dto);
+                if (atualizado == null)
+                    return NotFound(new { Message = $"Pedido com o Id={id} não encontrado." });
 
-            if (atualizado == null)
-                return NotFound(new { Message = $"Pedido com o Id={id} não encontrado." });
-
-            return Ok(atualizado);
+                return Ok(atualizado);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
-        // DELETE api/<Pedido>/5
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
             var pedido = _pedidoService.Delete(id);
-
             if (pedido == null)
                 return NotFound(new { Message = $"Pedido com o Id={id} não encontrado." });
 

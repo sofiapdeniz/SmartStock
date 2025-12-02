@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SmartStock.Data;
-using SmartStock.Interface;
+﻿using SmartStock.Interface;
 using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
 using SmartStock.Repository;
+using System;
+using System.Collections.Generic;
 
 namespace SmartStock.Services
 {
@@ -38,44 +38,81 @@ namespace SmartStock.Services
             return _pedidoRepository.PatchPedido(id, pedido);
         }
 
-        public PedidoVenda PostPedido(PedidoVendaPostDTO newPedido)
+        public PedidoVenda PostPedido(PedidoVendaPostDTO dto)
         {
-            if (newPedido == null)
-                throw new Exception("o corpo da requisição é inválido.");
-
-            if (_pedidoRepository.GetById(newPedido.Id) != null)
-                throw new Exception($"Já existe um produto com o mesmo código={newPedido.Id}.");
+            if (dto == null)
+                throw new Exception("O corpo da requisição é inválido.");
 
             var pedido = new PedidoVenda
             {
-                ClienteNome = newPedido.ClienteNome,
-                ValorTotal = newPedido.ValorTotal,
-                EnderecoEntrega = newPedido.EnderecoEntrega,
-                BairroEntrega = newPedido.BairroEntrega,
-                NumeroEnderecoEntrega = newPedido.NumeroEnderecoEntrega,
-                TelefoneCliente = newPedido.TelefoneCliente,
+                ClienteNome = dto.ClienteNome,
+                ValorTotal = dto.ValorTotal,
+                EnderecoEntrega = dto.EnderecoEntrega,
+                BairroEntrega = dto.BairroEntrega,
+                NumeroEnderecoEntrega = dto.NumeroEnderecoEntrega,
+                TelefoneCliente = dto.TelefoneCliente,
+                TipoEntrega = dto.TipoEntrega,
                 ItensPedido = new List<ItemPedido>()
             };
-            foreach (var itemDto in newPedido.Itens)
+
+            foreach (var itemDto in dto.Itens)
             {
                 var produto = _produtoRepository.GetById(itemDto.ProdutoId);
                 if (produto == null)
-                {
                     throw new Exception($"Produto com Id={itemDto.ProdutoId} não encontrado.");
-                }
-                var itemPedido = new ItemPedido
+
+                if (produto.Estoque < itemDto.Quantidade)
+                    throw new Exception($"Estoque insuficiente do produto {produto.Nome}. Disponível: {produto.Estoque}");
+
+                produto.Estoque -= itemDto.Quantidade;
+                _produtoRepository.Update(produto);
+
+                pedido.ItensPedido.Add(new ItemPedido
                 {
                     ProdutoId = itemDto.ProdutoId,
                     Quantidade = itemDto.Quantidade,
-                    PrecoUnitario = produto.PrecoUnitario,
-                };
-                pedido.ItensPedido.Add(itemPedido);
+                    PrecoUnitario = produto.PrecoUnitario
+                });
             }
+
             return _pedidoRepository.PostPedido(pedido);
         }
 
-        public PedidoVenda PutPedido(int id, PedidoVenda pedido)
+        public PedidoVenda PutPedido(int id, PedidoVendaPutDTO dto)
         {
+            var pedido = _pedidoRepository.GetById(id);
+            if (pedido == null) return null;
+
+            pedido.ClienteNome = dto.ClienteNome;
+            pedido.ValorTotal = dto.ValorTotal;
+            pedido.TipoEntrega = dto.TipoEntrega;
+            pedido.EnderecoEntrega = dto.EnderecoEntrega;
+            pedido.BairroEntrega = dto.BairroEntrega;
+            pedido.NumeroEnderecoEntrega = dto.NumeroEnderecoEntrega;
+            pedido.TelefoneCliente = dto.TelefoneCliente;
+
+            // Atualiza itens
+            pedido.ItensPedido.Clear();
+            foreach (var itemDto in dto.Itens)
+            {
+                var produto = _produtoRepository.GetById(itemDto.ProdutoId);
+                if (produto == null)
+                    throw new Exception($"Produto com Id={itemDto.ProdutoId} não encontrado.");
+
+                if (produto.Estoque < itemDto.Quantidade)
+                    throw new Exception($"Estoque insuficiente do produto {produto.Nome}. Disponível: {produto.Estoque}");
+
+                produto.Estoque -= itemDto.Quantidade;
+                _produtoRepository.Update(produto);
+
+                pedido.ItensPedido.Add(new ItemPedido
+                {
+                    ProdutoId = itemDto.ProdutoId,
+                    Quantidade = itemDto.Quantidade,
+                    PrecoUnitario = produto.PrecoUnitario
+                });
+            }
+
             return _pedidoRepository.PutPedido(id, pedido);
         }
     }
