@@ -1,1 +1,11 @@
-{"Version":1,"Hash":"AFR/T1NyxSepM3nRM1N6Cm0q4aKcJwEulcp3nZHoGmE=","Source":"SmartStock","BasePath":"/","Mode":"Root","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}
+{
+  "Version": 1,
+  "Hash": "xm94CT8NkXXpcInlM1F7tZVsmiPedv8xHL1HCSXHAwo=",
+  "Source": "SmartStock",
+  "BasePath": "_content/SmartStock",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
