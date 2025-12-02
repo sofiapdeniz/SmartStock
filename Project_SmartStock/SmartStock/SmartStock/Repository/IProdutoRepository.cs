@@ -7,7 +7,7 @@ namespace SmartStock.Repository
     {
         List<Produto> GetProdutos();
         Produto GetById(int id);
-        Produto PostProduto(ProdutoPostDTO produto);
+        Produto PostProduto(Produto produto);
         Produto PutProduto(int id, ProdutoPutDTO produto);
         Produto PatchProduto(int id, ProdutoPatchDTO produto);
         Produto Delete(int id);

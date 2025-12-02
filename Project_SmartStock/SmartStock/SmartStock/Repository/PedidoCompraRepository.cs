@@ -1,6 +1,9 @@
 ﻿using SmartStock.Models;
 using SmartStock.Data;
 using SmartStock.Models.SmartStock.Models.DTOs;
+using Microsoft.EntityFrameworkCore; // ESSENCIAL: Necessário para usar .Include() e DbUpdateException
+using System; 
+using System.Linq; // Necessário para FirstOrDefault e ToList
 
 namespace SmartStock.Repository
 {
@@ -23,9 +26,27 @@ namespace SmartStock.Repository
             return pedido;
         }
 
-        public PedidoCompra GetById(int id) => _context.PedidoCompraTable.FirstOrDefault(f => f.Id == id);
+        // --- CORREÇÃO APLICADA: EAGER LOADING com .Include() e .ThenInclude() ---
+        
+        public PedidoCompra GetById(int id)
+        {
+            return _context.PedidoCompraTable
+                .Include(pc => pc.Fornecedor) // Inclui o fornecedor
+                .Include(pc => pc.ItensPedido) // Inclui a coleção de itens
+                    .ThenInclude(ip => ip.Produto) // Para cada item, inclui o Produto (onde está o Estoque)
+                .FirstOrDefault(pc => pc.Id == id);
+        }
 
-        public List<PedidoCompra> GetPedidos() => _context.PedidoCompraTable.ToList();
+        public List<PedidoCompra> GetPedidos()
+        {
+            return _context.PedidoCompraTable
+                .Include(pc => pc.Fornecedor) // Inclui o fornecedor
+                .Include(pc => pc.ItensPedido) // Inclui a coleção de itens
+                    .ThenInclude(ip => ip.Produto) // Para cada item, inclui o Produto (onde está o Estoque)
+                .ToList();
+        }
+        
+        // ------------------------------------------------------------------------
 
         public PedidoCompra PatchPedido(int id, PedidoCompraPatchDTO dto)
         {
@@ -41,13 +62,25 @@ namespace SmartStock.Repository
             return pedido;
         }
 
-        // ALTERADO: recebe PedidoCompra completo
+        // --- MÉTODO POST (MANTIDO) ---
         public PedidoCompra PostPedido(PedidoCompra pedido)
         {
-            _context.PedidoCompraTable.Add(pedido);
-            _context.SaveChanges();
-            return pedido;
+            try
+            {
+                _context.PedidoCompraTable.Add(pedido);
+                _context.SaveChanges();
+                return pedido;
+            }
+            catch (DbUpdateException ex)
+            {
+                if (ex.InnerException != null)
+                {
+                    throw ex.InnerException;
+                }
+                throw;
+            }
         }
+        // -----------------------------
 
         public PedidoCompra PutPedido(int id, PedidoCompraPutDTO dto)
         {

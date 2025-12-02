@@ -7,8 +7,7 @@
         public string Descricao { get; set; }
         public decimal PrecoUnitario { get; set; }
         public string UnidadeMedida { get; set; }
-
-        public List<FornecedorProduto> Fornecedores { get; set; }
+        public List<FornecedorProdutoPostDTO>? Fornecedores { get; set; }
 
     }
 }

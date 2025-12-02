@@ -2,6 +2,8 @@
 using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
 using SmartStock.Repository;
+using System.Data;
+using Microsoft.EntityFrameworkCore; // Necessário para acessar o IQueryable (se o GetById retornar IQueryable/Includes)
 
 namespace SmartStock.Services
 {
@@ -21,10 +23,24 @@ namespace SmartStock.Services
             _fornecedorRepository = fornecedorRepository;
         }
 
+        // --- Métodos de Consulta e Atualização (Sem Alteração) ---
+        
         public PedidoCompra Delete(int id)
         {
             var pedido = _pedidoRepository.GetById(id);
             if (pedido == null) return null;
+            
+            // Lógica de Negócios: Ao deletar um pedido de compra, o estoque deve ser subtraído.
+            foreach (var item in pedido.ItensPedido)
+            {
+                var produto = _produtoRepository.GetById(item.ProdutoId);
+                if (produto != null)
+                {
+                    produto.Estoque -= item.Quantidade;
+                    _produtoRepository.Update(produto);
+                }
+            }
+            
             return _pedidoRepository.Delete(id);
         }
 
@@ -36,20 +52,25 @@ namespace SmartStock.Services
         {
             var pedido = _pedidoRepository.GetById(id);
             if (pedido == null) return null;
-            return _pedidoRepository.PatchPedido(id, dto);
+            
+            // Este método deveria ter lógica de ajuste de estoque semelhante ao PUT
+            // caso o PATCH permita alteração de itens, mas vamos manter o foco no PUT.
+            return _pedidoRepository.PatchPedido(id, dto); 
         }
+
+        // ----------------------------------------------------------------
 
         public PedidoCompra PostPedido(PedidoCompraPostDTO newPedido)
         {
             if (newPedido == null)
-                throw new Exception("O corpo da requisição é inválido.");
+                throw new ArgumentException("O corpo da requisição é inválido.");
 
-            // 1. Verifica se o fornecedor existe
+            var produtosParaAtualizar = new List<Produto>();
+
             var fornecedor = _fornecedorRepository.GetById(newPedido.FornecedorId);
             if (fornecedor == null)
-                throw new Exception($"Fornecedor com Id={newPedido.FornecedorId} não encontrado.");
+                throw new KeyNotFoundException($"Fornecedor com Id={newPedido.FornecedorId} não encontrado.");
 
-            // 2. Cria o pedido
             var pedido = new PedidoCompra
             {
                 FornecedorId = newPedido.FornecedorId,
@@ -61,56 +82,118 @@ namespace SmartStock.Services
                 ItensPedido = new List<ItemPedido>()
             };
 
-            // 3. Adiciona itens e atualiza o estoque
             foreach (var itemDto in newPedido.Itens)
             {
                 var produto = _produtoRepository.GetById(itemDto.ProdutoId);
                 if (produto == null)
-                    throw new Exception($"Produto com Id={itemDto.ProdutoId} não encontrado.");
+                    throw new KeyNotFoundException($"Produto com Id={itemDto.ProdutoId} não encontrado.");
 
-                // Atualiza estoque
+                // LÓGICA DE ESTOQUE: Adiciona a quantidade comprada ao estoque
                 produto.Estoque += itemDto.Quantidade;
-                _produtoRepository.Update(produto);
+                produtosParaAtualizar.Add(produto);
 
-                // Cria item do pedido
                 var itemPedido = new ItemPedido
                 {
                     ProdutoId = produto.Id,
                     Quantidade = itemDto.Quantidade,
-                    PrecoUnitario = produto.PrecoUnitario
+                    PrecoUnitario = produto.PrecoUnitario,
+                    UnidadeMedida = produto.UnidadeMedida
                 };
+                
                 pedido.ItensPedido.Add(itemPedido);
             }
 
-            // 4. Salva o pedido
-            return _pedidoRepository.PostPedido(pedido);
+            var pedidoSalvo = _pedidoRepository.PostPedido(pedido);
+
+            // ATUALIZA ESTOQUE (Persiste as mudanças de estoque no banco)
+            foreach (var produto in produtosParaAtualizar)
+            {
+                _produtoRepository.Update(produto); 
+            }
+
+            return pedidoSalvo;
         }
+
+        // --- MÉTODO PUT CORRIGIDO PARA AJUSTAR ESTOQUE ---
 
         public PedidoCompra PutPedido(int id, PedidoCompraPutDTO dto)
         {
-            var pedido = _pedidoRepository.GetById(id);
-            if (pedido == null) return null;
+            // 1. CARREGAR O PEDIDO ANTIGO COM ITENS (Repositorio usa .Include())
+            var pedidoAntigo = _pedidoRepository.GetById(id); 
+            if (pedidoAntigo == null) return null;
 
-            pedido.NomeFornecedor = dto.NomeFornecedor;
-            pedido.CondicaoPagamento = dto.CondicaoPagamento;
-            pedido.Contato = dto.Contato;
-            pedido.ItensPedido = new List<ItemPedido>();
+            // Mapeamento de propriedades principais
+            pedidoAntigo.NomeFornecedor = dto.NomeFornecedor;
+            pedidoAntigo.CondicaoPagamento = dto.CondicaoPagamento;
+            pedidoAntigo.Contato = dto.Contato;
+            
+            // Usamos um Dictionary para mapear os itens novos por ProdutoId para fácil acesso
+            var novosItensMap = dto.Itens.ToDictionary(i => i.ProdutoId, i => i);
 
-            foreach (var itemDto in dto.Itens)
+            // 2. PROCESSAR ITENS EXISTENTES: Calcular e aplicar a diferença de estoque
+            foreach (var itemAntigo in pedidoAntigo.ItensPedido.ToList())
             {
-                var produto = _produtoRepository.GetById(itemDto.ProdutoId);
+                if (novosItensMap.TryGetValue(itemAntigo.ProdutoId, out var itemNovoDto))
+                {
+                    // Item existe na nova lista (FOI ALTERADO)
+                    
+                    var diferencaQuantidade = itemNovoDto.Quantidade - itemAntigo.Quantidade;
+                    
+                    if (diferencaQuantidade != 0)
+                    {
+                        var produto = _produtoRepository.GetById(itemAntigo.ProdutoId);
+                        if (produto != null)
+                        {
+                            // APLICAÇÃO DA LÓGICA DE ESTOQUE: Adiciona ou subtrai a diferença
+                            produto.Estoque += diferencaQuantidade; 
+                            _produtoRepository.Update(produto);
+                        }
+                    }
+                    
+                    // ATUALIZA O ITEM NO PEDIDO
+                    itemAntigo.Quantidade = itemNovoDto.Quantidade;
+                    // Remove da lista de novos itens para saber quais foram ADICIONADOS depois
+                    novosItensMap.Remove(itemAntigo.ProdutoId);
+                }
+                else
+                {
+                    // Item NÃO existe na nova lista (FOI REMOVIDO)
+                    
+                    var produto = _produtoRepository.GetById(itemAntigo.ProdutoId);
+                    if (produto != null)
+                    {
+                        // LÓGICA DE ESTOQUE: Subtrai o item que foi removido do pedido
+                        produto.Estoque -= itemAntigo.Quantidade;
+                        _produtoRepository.Update(produto);
+                    }
+                    // Marca o item antigo para remoção (necessário no EF Core)
+                    pedidoAntigo.ItensPedido.Remove(itemAntigo);
+                }
+            }
+            
+            // 3. PROCESSAR NOVOS ITENS: Itens que restaram no novosItensMap (FORAM ADICIONADOS)
+            foreach (var itemNovoDto in novosItensMap.Values)
+            {
+                var produto = _produtoRepository.GetById(itemNovoDto.ProdutoId);
                 if (produto == null)
-                    throw new Exception($"Produto com Id={itemDto.ProdutoId} não encontrado.");
+                    throw new KeyNotFoundException($"Produto com Id={itemNovoDto.ProdutoId} não encontrado.");
 
+                // LÓGICA DE ESTOQUE: Adiciona a nova quantidade ao estoque
+                produto.Estoque += itemNovoDto.Quantidade;
+                _produtoRepository.Update(produto);
+                
+                // CRIA E ADICIONA NOVO ITEM
                 var itemPedido = new ItemPedido
                 {
                     ProdutoId = produto.Id,
-                    Quantidade = itemDto.Quantidade,
-                    PrecoUnitario = produto.PrecoUnitario
+                    Quantidade = itemNovoDto.Quantidade,
+                    PrecoUnitario = produto.PrecoUnitario,
+                    UnidadeMedida = produto.UnidadeMedida
                 };
-                pedido.ItensPedido.Add(itemPedido);
+                pedidoAntigo.ItensPedido.Add(itemPedido);
             }
 
+            // 4. Salva as mudanças do Pedido (cabeçalho, itens removidos, alterados e adicionados)
             return _pedidoRepository.PutPedido(id, dto);
         }
     }

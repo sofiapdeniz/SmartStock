@@ -43,20 +43,8 @@ namespace SmartStock.Repository
             return produto;
         }
 
-        public Produto PostProduto(ProdutoPostDTO dto)
+        public Produto PostProduto(Produto produto)
         {
-            var produto = new Produto
-            {
-                Nome = dto.Nome,
-                Codigo = dto.Codigo,
-                Descricao = dto.Descricao,
-                PrecoUnitario = dto.PrecoUnitario,
-                UnidadeMedida = dto.UnidadeMedida,
-                Estoque = 0, // inicializa estoque
-                DataCriacao = DateTime.Now,
-                DataAtualizacao = DateTime.Now
-            };
-
             _context.ProdutoTable.Add(produto);
             _context.SaveChanges();
             return produto;
