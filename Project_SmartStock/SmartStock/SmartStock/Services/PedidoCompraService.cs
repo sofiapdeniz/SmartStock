@@ -7,9 +7,9 @@ namespace SmartStock.Services
 {
     public class PedidoCompraService : IPedidoCompraService
     {
-        private readonly IPedidoCompraService _pedidoRepository;
+        private readonly IPedidoCompraRepository _pedidoRepository;
         private readonly IProdutoRepository _produtoRepository;
-        public PedidoCompraService(IPedidoCompraService pedidoRepository, IProdutoRepository produtoRepository)
+        public PedidoCompraService(IPedidoCompraRepository pedidoRepository, IProdutoRepository produtoRepository)
         {
             _pedidoRepository = pedidoRepository;
             _produtoRepository = produtoRepository;

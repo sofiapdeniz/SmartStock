@@ -28,14 +28,9 @@ namespace SmartStock.Services
             return _pedidoRepository.GetById(id);
         }
 
-        public List<PedidoVenda> GetPedidos(int id)
-        {
-            return _pedidoRepository.GetPedidos();
-        }
-
         public List<PedidoVenda> GetPedidos()
         {
-            throw new NotImplementedException();
+            return _pedidoRepository.GetPedidos();
         }
 
         public PedidoVenda PatchPedido(int id, PedidoVenda pedido)
@@ -77,11 +72,6 @@ namespace SmartStock.Services
                 pedido.ItensPedido.Add(itemPedido);
             }
             return _pedidoRepository.PostPedido(pedido);
-        }
-
-        public PedidoVenda PostPedido(PedidoCompraPostDTO pedido)
-        {
-            throw new NotImplementedException();
         }
 
         public PedidoVenda PutPedido(int id, PedidoVenda pedido)

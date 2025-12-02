@@ -24,14 +24,14 @@ namespace SmartStock
             // Repositories
             builder.Services.AddScoped<IFornecedorRepository, FornecedorRepository>();
             builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
-            //builder.Services.AddScoped<IPedidoCompraRepository, PedidoCompraRepository>();
-            //builder.Services.AddScoped<IPedidoVendaRepository, PedidoVendaRepository>();
+            builder.Services.AddScoped<IPedidoCompraRepository, PedidoCompraRepository>();
+            builder.Services.AddScoped<IPedidoVendaRepository, PedidoVendaRepository>();
 
             // Services
             builder.Services.AddScoped<IFornecedorService, FornecedorService>();
             builder.Services.AddScoped<IProdutoService, ProdutoService>();
-            //builder.Services.AddScoped<IPedidoCompraService, PedidoCompraService>();
-            //builder.Services.AddScoped<IPedidoVendaService, PedidoVendaService>();
+            builder.Services.AddScoped<IPedidoCompraService, PedidoCompraService>();
+            builder.Services.AddScoped<IPedidoVendaService, PedidoVendaService>();
             // -----------------------------------------------------
 
             // Swagger

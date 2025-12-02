@@ -41,7 +41,7 @@ namespace SmartStock.Controllers
             return Ok(pedido);
         }
         [HttpPost]
-        public IActionResult Post([FromBody] PedidoCompraPostDTO newPedido)
+        public IActionResult Post([FromBody] PedidoVendaPostDTO newPedido)
         {
             try
             {

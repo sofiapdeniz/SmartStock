@@ -27,9 +27,9 @@ namespace SmartStock.Repository
             return pedido;
         }
 
-        public PedidoVenda GetById(int id)
+        public PedidoVenda? GetById(int id)
         {
-            return GetById(id);
+            return _context.PedidoVendaTable.FirstOrDefault(p => p.Id == id);
         }
 
         public List<PedidoVenda> GetPedidos()
