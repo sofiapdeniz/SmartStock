@@ -9,108 +9,109 @@ namespace SmartStock.Services
     {
         private readonly IPedidoCompraRepository _pedidoRepository;
         private readonly IProdutoRepository _produtoRepository;
-        public PedidoCompraService(IPedidoCompraRepository pedidoRepository, IProdutoRepository produtoRepository)
+        private readonly IFornecedorRepository _fornecedorRepository;
+
+        public PedidoCompraService(
+            IPedidoCompraRepository pedidoRepository, 
+            IProdutoRepository produtoRepository,
+            IFornecedorRepository fornecedorRepository)
         {
             _pedidoRepository = pedidoRepository;
             _produtoRepository = produtoRepository;
+            _fornecedorRepository = fornecedorRepository;
         }
+
         public PedidoCompra Delete(int id)
         {
             var pedido = _pedidoRepository.GetById(id);
-
-            if (pedido == null)
-                return null;
-
+            if (pedido == null) return null;
             return _pedidoRepository.Delete(id);
         }
 
-        public PedidoCompra GetById(int id)
-        {
-            return _pedidoRepository.GetById(id);
-        }
+        public PedidoCompra GetById(int id) => _pedidoRepository.GetById(id);
 
-        public List<PedidoCompra> GetPedidos()
-        {
-            return _pedidoRepository.GetPedidos();
-        }
+        public List<PedidoCompra> GetPedidos() => _pedidoRepository.GetPedidos();
 
         public PedidoCompra PatchPedido(int id, PedidoCompraPatchDTO dto)
         {
             var pedido = _pedidoRepository.GetById(id);
-
-            if (pedido == null)
-
-                return null;
-            if (dto.NomeFornecedor != null)
-                pedido.NomeFornecedor = dto.NomeFornecedor;
-
-            if (dto.CondicaoPagamento.HasValue)
-                pedido.CondicaoPagamento = dto.CondicaoPagamento.Value;
-
+            if (pedido == null) return null;
             return _pedidoRepository.PatchPedido(id, dto);
-
         }
 
         public PedidoCompra PostPedido(PedidoCompraPostDTO newPedido)
-        { 
-            if (newPedido == null)
-                throw new Exception("o corpo da requisição é inválido.");
-
-            if (_pedidoRepository.GetById(newPedido.Id) != null)
-                throw new Exception($"Já existe um produto com o mesmo código={newPedido.Id}.");
-
-        var pedido = new PedidoCompra
         {
-            NomeFornecedor = newPedido.NomeFornecedor,
-            CondicaoPagamento = newPedido.CondicaoPagamento,
-            ItensPedido = new List<ItemPedido>()
-        };
+            if (newPedido == null)
+                throw new Exception("O corpo da requisição é inválido.");
+
+            // 1. Verifica se o fornecedor existe
+            var fornecedor = _fornecedorRepository.GetById(newPedido.FornecedorId);
+            if (fornecedor == null)
+                throw new Exception($"Fornecedor com Id={newPedido.FornecedorId} não encontrado.");
+
+            // 2. Cria o pedido
+            var pedido = new PedidoCompra
+            {
+                FornecedorId = newPedido.FornecedorId,
+                NomeFornecedor = fornecedor.Nome,
+                CondicaoPagamento = newPedido.CondicaoPagamento,
+                Contato = newPedido.Contato,
+                DataCriacao = DateTime.Now,
+                DataAtualizacao = DateTime.Now,
+                ItensPedido = new List<ItemPedido>()
+            };
+
+            // 3. Adiciona itens e atualiza o estoque
             foreach (var itemDto in newPedido.Itens)
             {
                 var produto = _produtoRepository.GetById(itemDto.ProdutoId);
                 if (produto == null)
-                {
                     throw new Exception($"Produto com Id={itemDto.ProdutoId} não encontrado.");
-                }
+
+                // Atualiza estoque
+                produto.Estoque += itemDto.Quantidade;
+                _produtoRepository.Update(produto);
+
+                // Cria item do pedido
                 var itemPedido = new ItemPedido
                 {
-                    ProdutoId = itemDto.ProdutoId,
+                    ProdutoId = produto.Id,
                     Quantidade = itemDto.Quantidade,
-                    PrecoUnitario = produto.PrecoUnitario,
+                    PrecoUnitario = produto.PrecoUnitario
                 };
                 pedido.ItensPedido.Add(itemPedido);
             }
-            return _pedidoRepository.PostPedido(newPedido);
+
+            // 4. Salva o pedido
+            return _pedidoRepository.PostPedido(pedido);
         }
 
         public PedidoCompra PutPedido(int id, PedidoCompraPutDTO dto)
         {
             var pedido = _pedidoRepository.GetById(id);
-
-            if (pedido == null)
-                return null;
+            if (pedido == null) return null;
 
             pedido.NomeFornecedor = dto.NomeFornecedor;
             pedido.CondicaoPagamento = dto.CondicaoPagamento;
+            pedido.Contato = dto.Contato;
             pedido.ItensPedido = new List<ItemPedido>();
 
             foreach (var itemDto in dto.Itens)
             {
                 var produto = _produtoRepository.GetById(itemDto.ProdutoId);
                 if (produto == null)
-                {
                     throw new Exception($"Produto com Id={itemDto.ProdutoId} não encontrado.");
-                }
+
                 var itemPedido = new ItemPedido
                 {
-                    ProdutoId = itemDto.ProdutoId,
+                    ProdutoId = produto.Id,
                     Quantidade = itemDto.Quantidade,
-                    PrecoUnitario = produto.PrecoUnitario,
+                    PrecoUnitario = produto.PrecoUnitario
                 };
                 pedido.ItensPedido.Add(itemPedido);
             }
-            return _pedidoRepository.PutPedido(id, dto);
 
+            return _pedidoRepository.PutPedido(id, dto);
         }
     }
 }

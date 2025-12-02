@@ -11,9 +11,10 @@ namespace SmartStock.Models
         public string Descricao { get; set; }
         public decimal PrecoUnitario { get; set; }
         public string UnidadeMedida { get; set; }
+        public int Estoque {get; set; } = 0;
 
         [JsonIgnore]
         public ICollection<ItemPedido> ItensPedido { get; set; }
-        public ICollection<FornecedorProduto> Fornecedores { get; set; } 
+        public ICollection<FornecedorProduto> Fornecedores { get; set; }
     }
 }

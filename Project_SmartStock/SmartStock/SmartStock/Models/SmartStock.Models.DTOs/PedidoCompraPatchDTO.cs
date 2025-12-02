@@ -1,6 +1,6 @@
 ﻿namespace SmartStock.Models.SmartStock.Models.DTOs
 {
-    public class PedidoCompraPatchDTO : EntidadeBase
+    public class PedidoCompraPatchDTO
     {
         public string? NomeFornecedor { get; set; }
         public int? CondicaoPagamento { get; set; }

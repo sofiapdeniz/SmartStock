@@ -13,15 +13,9 @@ namespace SmartStock.Repository
             _context = context;
         }
 
-        public Fornecedor GetById(int id)
-        {
-            return _context.FornecedorTable.FirstOrDefault(f => f.Id == id);
-        }
+        public Fornecedor GetById(int id) => _context.FornecedorTable.FirstOrDefault(f => f.Id == id);
 
-        public List<Fornecedor> GetFornecedores()
-        {
-            return _context.FornecedorTable.ToList();
-        }
+        public List<Fornecedor> GetFornecedores() => _context.FornecedorTable.ToList();
 
         public Fornecedor PostFornecedor(FornecedorPostDTO dto)
         {
@@ -44,9 +38,7 @@ namespace SmartStock.Repository
         public Fornecedor PutFornecedor(int id, FornecedorPutDTO dto)
         {
             var fornecedor = _context.FornecedorTable.FirstOrDefault(f => f.Id == id);
-            
-            if (fornecedor == null)
-                return null;
+            if (fornecedor == null) return null;
 
             fornecedor.Nome = dto.Nome;
             fornecedor.Cnpj = dto.CNPJ;
@@ -62,27 +54,15 @@ namespace SmartStock.Repository
         public Fornecedor PatchFornecedor(int id, FornecedorPatchDTO dto)
         {
             var fornecedor = _context.FornecedorTable.FirstOrDefault(f => f.Id == id);
-            
-            if (fornecedor == null)
-                return null;
+            if (fornecedor == null) return null;
 
-            if (dto.Nome != null) 
-                fornecedor.Nome = dto.Nome;
-
-            if (dto.CNPJ != null) 
-                fornecedor.Cnpj = dto.CNPJ;
-
-            if (dto.Telefone != null) 
-                fornecedor.Telefone = dto.Telefone;
-
-            if (dto.Email != null) 
-                fornecedor.Email = dto.Email;
-
-            if (dto.Endereco != null) 
-                fornecedor.Endereco = dto.Endereco;
+            if (dto.Nome != null) fornecedor.Nome = dto.Nome;
+            if (dto.CNPJ != null) fornecedor.Cnpj = dto.CNPJ;
+            if (dto.Telefone != null) fornecedor.Telefone = dto.Telefone;
+            if (dto.Email != null) fornecedor.Email = dto.Email;
+            if (dto.Endereco != null) fornecedor.Endereco = dto.Endereco;
 
             fornecedor.DataAtualizacao = DateTime.Now;
-
             _context.SaveChanges();
             return fornecedor;
         }
