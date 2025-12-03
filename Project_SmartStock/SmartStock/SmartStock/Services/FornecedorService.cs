@@ -1,4 +1,6 @@
-﻿using SmartStock.Interface;
+﻿// EM SmartStock.Services/FornecedorService.cs
+
+using SmartStock.Interface;
 using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
 using SmartStock.Repository;
@@ -9,23 +11,24 @@ namespace SmartStock.Services
 {
     public class FornecedorService : IFornecedorService
     {
-        private readonly IFornecedorRepository _fornecedor;
+        // CORREÇÃO: Tipo alterado para a interface ajustada
+        private readonly IFornecedorRepository _fornecedorRepository; 
         private readonly IProdutoRepository _produtoRepository;
 
-        public FornecedorService(IFornecedorRepository fornecedor, IProdutoRepository produtoRepository)
+        public FornecedorService(IFornecedorRepository fornecedorRepository, IProdutoRepository produtoRepository)
         {
-            _fornecedor = fornecedor;
+            _fornecedorRepository = fornecedorRepository;
             _produtoRepository = produtoRepository;
         }
 
         public Fornecedor GetById(int id)
         {
-            return _fornecedor.GetById(id);
+            return _fornecedorRepository.GetById(id);
         }
 
         public List<Fornecedor> GetFornecedores()
         {
-            return _fornecedor.GetFornecedores();
+            return _fornecedorRepository.GetFornecedores();
         }
 
         public Fornecedor PostFornecedor(FornecedorPostDTO dto)
@@ -33,62 +36,52 @@ namespace SmartStock.Services
             if (dto == null)
                 throw new Exception("O corpo da requisição é inválido.");
 
-            if (_fornecedor.GetById(dto.Id) != null)
-                throw new Exception($"Já existe um fornecedor com este mesmo id={dto.Id}");
-
+            // **CORREÇÃO:** Removemos a verificação de dto.Id e a tentativa de relacionar produtos.
+            // O ID é gerado automaticamente, e a relação é feita pelo Produto.
+            
             var fornecedor = new Fornecedor
             {
-                Id = dto.Id,
                 Nome = dto.Nome,
-                Cnpj = dto.CNPJ,
+                Cnpj = dto.Cnpj,
                 Telefone = dto.Telefone,
                 Email = dto.Email,
                 Endereco = dto.Endereco
+                // DataCriacao/DataAtualizacao serão preenchidas no DataContext
             };
 
-            foreach (var itemDto in fornecedor.ProdutosFornecidos)
-            {
-                var produto = _produtoRepository.GetById(itemDto.ProdutoId);
-                if (produto == null)
-                {
-                    throw new Exception($"Produto com Id={itemDto.ProdutoId} não encontrado.");
-                }
-
-                 var ProdutosFornecidos = new FornecedorProduto
-                {
-                    ProdutoId = produto.Id,
-                };
-                fornecedor.ProdutosFornecidos.Add(ProdutosFornecidos);
-            }
-
-            return _fornecedor.PostFornecedor(dto);
+            // Chamada ao repositório com a Entidade.
+            return _fornecedorRepository.PostFornecedor(fornecedor); 
         }
 
         public Fornecedor PutFornecedor(int id, FornecedorPutDTO dto)
         {
-            var fornecedor = _fornecedor.GetById(id);
+            var fornecedor = _fornecedorRepository.GetById(id);
             if (fornecedor == null) return null;
 
+            // Mapeamento das propriedades do DTO para a Entidade
             fornecedor.Nome = dto.Nome;
-            fornecedor.Cnpj = dto.CNPJ;
+            fornecedor.Cnpj = dto.Cnpj;
             fornecedor.Telefone = dto.Telefone;
             fornecedor.Email = dto.Email;
             fornecedor.Endereco = dto.Endereco;
+            // DataAtualizacao será preenchida no DataContext
 
-            return _fornecedor.PutFornecedor(id, dto);
+            // Chamada ao repositório com a Entidade.
+            return _fornecedorRepository.PutFornecedor(fornecedor);
         }
 
         public Fornecedor PatchFornecedor(int id, FornecedorPatchDTO dto)
         {
-            var fornecedor = _fornecedor.GetById(id);
+            var fornecedor = _fornecedorRepository.GetById(id);
             if (fornecedor == null) 
                 return null;
 
+            // Aplicação dos valores do DTO
             if (dto.Nome != null) 
                 fornecedor.Nome = dto.Nome;
 
-            if (dto.CNPJ != null) 
-                fornecedor.Cnpj = dto.CNPJ;
+            if (dto.Cnpj != null) 
+                fornecedor.Cnpj = dto.Cnpj;
 
             if (dto.Telefone != null) 
                 fornecedor.Telefone = dto.Telefone;
@@ -98,17 +91,19 @@ namespace SmartStock.Services
 
             if (dto.Endereco != null) 
                 fornecedor.Endereco = dto.Endereco;
+            // DataAtualizacao será preenchida no DataContext
 
-            return _fornecedor.PatchFornecedor(id, dto);
+            // Chamada ao repositório com a Entidade.
+            return _fornecedorRepository.PatchFornecedor(fornecedor);
         }
 
         public Fornecedor Delete(int id)
         {
-            var fornecedor = _fornecedor.GetById(id);
+            var fornecedor = _fornecedorRepository.GetById(id);
             if (fornecedor == null) 
                 return null;
 
-            return _fornecedor.Delete(id);
+            return _fornecedorRepository.Delete(id);
         }
     }
 }

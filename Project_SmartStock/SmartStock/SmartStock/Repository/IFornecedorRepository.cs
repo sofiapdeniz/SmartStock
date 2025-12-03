@@ -1,5 +1,6 @@
 ﻿using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
+using System.Collections.Generic;
 
 namespace SmartStock.Repository
 {
@@ -7,9 +8,9 @@ namespace SmartStock.Repository
     {
         List<Fornecedor> GetFornecedores();
         Fornecedor GetById(int id);
-        Fornecedor PostFornecedor(FornecedorPostDTO fornecedor);
-        Fornecedor PutFornecedor(int id, FornecedorPutDTO fornecedor);
-        Fornecedor PatchFornecedor(int id, FornecedorPatchDTO fornecedor);
+        Fornecedor PostFornecedor(Fornecedor fornecedor);
+        Fornecedor PutFornecedor(Fornecedor fornecedor);
+        Fornecedor PatchFornecedor(Fornecedor fornecedor);
         Fornecedor Delete(int id);
     }
 }

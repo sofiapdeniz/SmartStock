@@ -1,51 +1,65 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// EM SmartStock.Services/ProdutoService.cs
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartStock.Interface;
 using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
 using SmartStock.Repository;
 using System.Data;
+using System.Linq; // NECESSÁRIO para usar Select e ToList
+using System.Collections.Generic; // NECESSÁRIO para usar List<T>
+using System; // NECESSÁRIO para usar ArgumentException e DateTime
 
 namespace SmartStock.Services
 {
-    public class ProdutoService : IProdutoService
+    // AVISO: IProdutoService DEVE ter os métodos GET retornando ProdutoResponseDTO
+    public class ProdutoService : IProdutoService 
     {
         private readonly IProdutoRepository _produtoRepository;
         private readonly IFornecedorRepository _fornecedorRepository;
 
-        // Note: IFornecedorRepository é necessário para verificar se o fornecedor existe.
         public ProdutoService(IProdutoRepository produtoRepository, IFornecedorRepository fornecedorRepository)
         {
             _produtoRepository = produtoRepository;
             _fornecedorRepository = fornecedorRepository;
         }
         
-        public Produto Delete(int id)
+        // CORREÇÃO CS8603: Adiciona '?'
+        public Produto? Delete(int id)
         {
             var produto = _produtoRepository.GetById(id);
             if (produto == null)
-                return null;
+                return null; // OK
 
             return _produtoRepository.Delete(id);
         }
 
-        public Produto GetById(int id)
+        // CORREÇÃO CS0738: Retorna ProdutoResponseDTO? (para coincidir com a interface)
+        // LÓGICA DE MAPEAMENTO RESTAURADA
+        public ProdutoResponseDTO? GetById(int id)
         {
-            // Nota: Para carregar fornecedores, você precisará de .Include() no Repository
-            return _produtoRepository.GetById(id);
+            var produto = _produtoRepository.GetById(id);
+            if (produto == null) return null; // OK
+            return MapToResponseDTO(produto);
         }
 
-        public List<Produto> GetProdutos()
+        // CORREÇÃO CS0738: Retorna List<ProdutoResponseDTO> (para coincidir com a interface)
+        // LÓGICA DE MAPEAMENTO RESTAURADA
+        public List<ProdutoResponseDTO> GetProdutos()
         {
-            return _produtoRepository.GetProdutos();
+            var produtos = _produtoRepository.GetProdutos();
+            // Mapeia cada entidade Produto para seu DTO correspondente
+            return produtos.Select(MapToResponseDTO).ToList();
         }
 
-        public Produto PatchProduto(int id, ProdutoPatchDTO dto)
+        // CORREÇÃO CS8603: Adiciona '?'
+        public Produto? PatchProduto(int id, ProdutoPatchDTO dto)
         {
             var produto = _produtoRepository.GetById(id);
 
             if (produto == null)
-                return null;
+                return null; // OK
 
             if (dto.Nome != null)
                 produto.Nome = dto.Nome;
@@ -62,21 +76,17 @@ namespace SmartStock.Services
             if (dto.UnidadeMedida != null)
                 produto.UnidadeMedida = dto.UnidadeMedida;
 
-            return _produtoRepository.PatchProduto(id, dto);
+            // OBS: Verifique se o PatchProduto no Repository aceita (id, dto) ou (entidade)
+            return _produtoRepository.PatchProduto(id, dto); 
         }
 
         
+        // Mantém Produto, se o repositório garantir que nunca falhará ou lançará exceção.
         public Produto PostProduto(ProdutoPostDTO dto)
         {
             if (dto == null)
                 throw new ArgumentException("O corpo da requisição é inválido.");
-
-            // É mais comum verificar se o Código (Unique) já existe, não o Id, que deve ser 0 em um POST.
-            // Para simplificar, vou remover a verificação de dto.Id == 0, mas se Código for unique, verifique-o.
-            // if (_produtoRepository.GetByCodigo(dto.Codigo) != null) 
-            //    throw new Exception($"Já existe um produto com este mesmo código={dto.Codigo}");
         
-            // 1. Cria a Entidade Produto, inicializando a coleção Fornecedores
             var produto = new Produto
             {
                 Nome = dto.Nome,
@@ -85,42 +95,38 @@ namespace SmartStock.Services
                 PrecoUnitario = dto.PrecoUnitario,
                 UnidadeMedida = dto.UnidadeMedida,
                 Estoque = 0,
-                Fornecedores = new List<FornecedorProduto>() // Inicializa a coleção M:N
+                Fornecedores = new List<FornecedorProduto>()
             };
 
-            // 2. Processa as relações FornecedorProduto
             if (dto.Fornecedores != null && dto.Fornecedores.Any())
             {
                 foreach (var fpDto in dto.Fornecedores)
                 {
-                    // VERIFICAÇÃO DE CHAVE ESTRANGEIRA (Garante que o FornecedorId existe)
                     if (_fornecedorRepository.GetById(fpDto.FornecedorId) == null)
                     {
                         throw new KeyNotFoundException($"Fornecedor com ID={fpDto.FornecedorId} não encontrado.");
                     }
 
-                    // CRIAÇÃO DA ENTIDADE M:N
                     produto.Fornecedores.Add(new FornecedorProduto
                     {
                         FornecedorId = fpDto.FornecedorId,
                         PrecoCusto = fpDto.PrecoCusto,
                         CodProduto = fpDto.CodProduto,
                         Ativo = fpDto.Ativo,
-                        // Não precisamos definir ProdutoId, o EF fará isso quando salvarmos o Produto.
                     });
                 }
             }
 
-            // 3. O Repository agora recebe a Entidade Produto COMPLETA para salvar.
             return _produtoRepository.PostProduto(produto);
         }
 
-        public Produto PutProduto(int id, ProdutoPutDTO dto)
+        // CORREÇÃO CS8603: Adiciona '?'
+        public Produto? PutProduto(int id, ProdutoPutDTO dto)
         {
             var produto = _produtoRepository.GetById(id);
 
             if (produto == null)
-                return null;
+                return null; // OK
 
             produto.Nome = dto.Nome;
             produto.Codigo = dto.Codigo;
@@ -129,6 +135,30 @@ namespace SmartStock.Services
             produto.UnidadeMedida = dto.UnidadeMedida;
 
             return _produtoRepository.PutProduto(id, dto);
+        }
+
+        // CORREÇÃO CS8603: Adiciona '?' (Permite que o mapeamento retorne null se o produto for null)
+        private ProdutoResponseDTO? MapToResponseDTO(Produto? produto)
+        {
+            if (produto == null) return null; // OK
+
+            return new ProdutoResponseDTO
+            {
+                Id = produto.Id,
+                Nome = produto.Nome,
+                Codigo = produto.Codigo,
+                Descricao = produto.Descricao,
+                PrecoUnitario = produto.PrecoUnitario,
+                UnidadeMedida = produto.UnidadeMedida,
+                Estoque = produto.Estoque,
+                DataCriacao = produto.DataCriacao,
+                DataAtualizacao = produto.DataAtualizacao,
+                
+                Fornecedores = produto.Fornecedores?
+                    .Select(fp => fp.FornecedorId)
+                    .ToList()
+                    ?? new List<int>()
+            };
         }
     }
 }

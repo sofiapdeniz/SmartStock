@@ -1,7 +1,10 @@
-﻿using SmartStock.Models;
+﻿// EM SmartStock.Repository/FornecedorRepository.cs
+
+using SmartStock.Models;
 using SmartStock.Data;
 using SmartStock.Models.SmartStock.Models.DTOs;
-using Microsoft.EntityFrameworkCore; // Importante para usar .Include() e .ThenInclude()
+using Microsoft.EntityFrameworkCore;
+using System.Linq; // Adicionar se não estiver presente
 
 namespace SmartStock.Repository
 {
@@ -16,68 +19,42 @@ namespace SmartStock.Repository
 
         public Fornecedor GetById(int id)
         {
-            // --- AJUSTE APLICADO AQUI ---
+            // Mantido o .Include para carregar dados na resposta GET
             return _context.FornecedorTable
-                .Include(f => f.ProdutosFornecidos) // 1. Inclui a tabela de junção (FornecedorProduto)
-                .ThenInclude(fp => fp.Produto)      // 2. A partir da junção, inclui o objeto Produto
+                .Include(f => f.ProdutosFornecidos)
+                .ThenInclude(fp => fp.Produto)
                 .FirstOrDefault(f => f.Id == id);
         }
 
         public List<Fornecedor> GetFornecedores()
         {
-            // --- AJUSTE APLICADO AQUI ---
+            // Mantido o .Include para carregar dados na resposta GET
             return _context.FornecedorTable
-                .Include(f => f.ProdutosFornecidos) // 1. Inclui a tabela de junção (FornecedorProduto)
-                .ThenInclude(fp => fp.Produto)      // 2. A partir da junção, inclui o objeto Produto
+                .Include(f => f.ProdutosFornecidos)
+                .ThenInclude(fp => fp.Produto)
                 .ToList();
         }
 
-        public Fornecedor PostFornecedor(FornecedorPostDTO dto)
+        // CORREÇÃO: Recebe a Entidade completa, mapeada pelo Service
+        public Fornecedor PostFornecedor(Fornecedor fornecedor) 
         {
-            var fornecedor = new Fornecedor
-            {
-                Nome = dto.Nome,
-                Cnpj = dto.CNPJ,
-                Telefone = dto.Telefone,
-                Email = dto.Email,
-                Endereco = dto.Endereco,
-                DataCriacao = DateTime.Now,
-                DataAtualizacao = DateTime.Now
-            };
-
             _context.FornecedorTable.Add(fornecedor);
             _context.SaveChanges();
             return fornecedor;
         }
 
-        public Fornecedor PutFornecedor(int id, FornecedorPutDTO dto)
+        // CORREÇÃO: Recebe a Entidade e não o DTO para o PUT
+        public Fornecedor PutFornecedor(Fornecedor fornecedor) 
         {
-            var fornecedor = _context.FornecedorTable.FirstOrDefault(f => f.Id == id);
-            if (fornecedor == null) return null;
-
-            fornecedor.Nome = dto.Nome;
-            fornecedor.Cnpj = dto.CNPJ;
-            fornecedor.Telefone = dto.Telefone;
-            fornecedor.Email = dto.Email;
-            fornecedor.Endereco = dto.Endereco;
-            fornecedor.DataAtualizacao = DateTime.Now;
-
+            _context.FornecedorTable.Update(fornecedor);
             _context.SaveChanges();
             return fornecedor;
         }
 
-        public Fornecedor PatchFornecedor(int id, FornecedorPatchDTO dto)
+        // CORREÇÃO: Recebe a Entidade e não o DTO para o PATCH
+        public Fornecedor PatchFornecedor(Fornecedor fornecedor) 
         {
-            var fornecedor = _context.FornecedorTable.FirstOrDefault(f => f.Id == id);
-            if (fornecedor == null) return null;
-
-            if (dto.Nome != null) fornecedor.Nome = dto.Nome;
-            if (dto.CNPJ != null) fornecedor.Cnpj = dto.CNPJ;
-            if (dto.Telefone != null) fornecedor.Telefone = dto.Telefone;
-            if (dto.Email != null) fornecedor.Email = dto.Email;
-            if (dto.Endereco != null) fornecedor.Endereco = dto.Endereco;
-
-            fornecedor.DataAtualizacao = DateTime.Now;
+            _context.FornecedorTable.Update(fornecedor);
             _context.SaveChanges();
             return fornecedor;
         }

@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// EM SmartStock.Controllers/PedidoVendaController.cs
+
+using Microsoft.AspNetCore.Mvc;
 using SmartStock.Interface;
 using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
+using System;
 
 namespace SmartStock.Controllers
 {
@@ -19,6 +22,7 @@ namespace SmartStock.Controllers
         [HttpGet]
         public IActionResult Get()
         {
+            // O serviço retorna List<PedidoVendaResponseDTO>
             var pedidos = _pedidoService.GetPedidos();
             return Ok(pedidos);
         }
@@ -26,6 +30,7 @@ namespace SmartStock.Controllers
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
+            // O serviço retorna PedidoVendaResponseDTO
             var pedido = _pedidoService.GetById(id);
             if (pedido == null)
                 return NotFound(new { Message = $"Pedido com o Id={id} não encontrado" });
@@ -38,6 +43,7 @@ namespace SmartStock.Controllers
         {
             try
             {
+                // O serviço retorna PedidoVendaResponseDTO
                 var pedidoCriado = _pedidoService.PostPedido(newPedido);
                 return CreatedAtAction(nameof(GetById), new { id = pedidoCriado.Id }, pedidoCriado);
             }
@@ -52,6 +58,7 @@ namespace SmartStock.Controllers
         {
             try
             {
+                // O serviço retorna PedidoVendaResponseDTO
                 var atualizado = _pedidoService.PutPedido(id, dto);
                 if (atualizado == null)
                     return NotFound(new { Message = $"Pedido com o Id={id} não encontrado." });

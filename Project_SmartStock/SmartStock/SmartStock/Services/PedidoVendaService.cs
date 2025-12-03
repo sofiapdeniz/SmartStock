@@ -1,4 +1,4 @@
-﻿// EM PedidoVendaService.cs
+﻿// EM SmartStock.Services/PedidoVendaService.cs
 
 using SmartStock.Interface;
 using SmartStock.Models;
@@ -21,42 +21,28 @@ namespace SmartStock.Services
             _produtoRepository = produtoRepository;
         }
 
-        public PedidoVenda Delete(int id)
+        // ----------------------------------------------------------------
+        // MÉTODOS GET - AGORA RETORNAM DTOs DE RESPOSTA
+        // ----------------------------------------------------------------
+
+        public PedidoVendaResponseDTO GetById(int id)
         {
             var pedido = _pedidoRepository.GetById(id);
             if (pedido == null) return null;
-
-            // Lógica de Negócios: Ao deletar uma venda, o estoque deve ser reabastecido.
-            foreach (var item in pedido.ItensPedido)
-            {
-                var produto = _produtoRepository.GetById(item.ProdutoId);
-                if (produto != null)
-                {
-                    produto.Estoque += item.Quantidade;
-                    _produtoRepository.Update(produto);
-                }
-            }
-
-            return _pedidoRepository.Delete(id);
+            return MapToResponseDTO(pedido);
         }
 
-        public PedidoVenda GetById(int id)
+        public List<PedidoVendaResponseDTO> GetPedidos()
         {
-            return _pedidoRepository.GetById(id);
+            var pedidos = _pedidoRepository.GetPedidos();
+            return pedidos.Select(MapToResponseDTO).ToList();
         }
 
-        public List<PedidoVenda> GetPedidos()
-        {
-            return _pedidoRepository.GetPedidos();
-        }
+        // ----------------------------------------------------------------
+        // MÉTODOS POST, PUT, PATCH - AGORA RETORNAM DTOs DE RESPOSTA
+        // ----------------------------------------------------------------
 
-        public PedidoVenda PatchPedido(int id, PedidoVenda pedido)
-        {
-            // Implementação do Patch não fornecida, mantendo a original.
-            return _pedidoRepository.PatchPedido(id, pedido);
-        }
-
-        public PedidoVenda PostPedido(PedidoVendaPostDTO dto)
+        public PedidoVendaResponseDTO PostPedido(PedidoVendaPostDTO dto)
         {
             if (dto == null)
                 throw new ArgumentException("O corpo da requisição é inválido.");
@@ -72,6 +58,9 @@ namespace SmartStock.Services
                 NumeroEnderecoEntrega = dto.NumeroEnderecoEntrega,
                 TelefoneCliente = dto.TelefoneCliente,
                 TipoEntrega = dto.TipoEntrega,
+                DataCriacao = DateTime.Now,
+                DataAtualizacao = DateTime.Now,
+                LojaRetirada = dto.LojaRetirada,
                 ItensPedido = new List<ItemPedido>()
             };
 
@@ -81,11 +70,9 @@ namespace SmartStock.Services
                 if (produto == null)
                     throw new KeyNotFoundException($"Produto com Id={itemDto.ProdutoId} não encontrado.");
 
-                // Verifica estoque ANTES de subtrair
                 if (produto.Estoque < itemDto.Quantidade)
                     throw new InvalidOperationException($"Estoque insuficiente do produto {produto.Nome}. Disponível: {produto.Estoque}");
 
-                // LÓGICA DE ESTOQUE: Subtrai a quantidade vendida
                 produto.Estoque -= itemDto.Quantidade;
                 produtosParaAtualizar.Add(produto); 
 
@@ -98,23 +85,21 @@ namespace SmartStock.Services
                 });
             }
 
-            // 1. Salva a Venda
             var pedidoSalvo = _pedidoRepository.PostPedido(pedido);
 
-            // 2. ATUALIZA ESTOQUE (Persiste as mudanças de estoque no banco)
             foreach (var produto in produtosParaAtualizar)
             {
                 _produtoRepository.Update(produto);
             }
-
-            return pedidoSalvo;
+            
+            // Recarrega para garantir que as relações (Produto) estejam carregadas para o DTO
+            var pedidoCompleto = _pedidoRepository.GetById(pedidoSalvo.Id);
+            return MapToResponseDTO(pedidoCompleto);
         }
 
 
-        // --- MÉTODO PUT CORRIGIDO PARA AJUSTAR ESTOQUE ---
-        public PedidoVenda PutPedido(int id, PedidoVendaPutDTO dto)
+        public PedidoVendaResponseDTO PutPedido(int id, PedidoVendaPutDTO dto)
         {
-            // 1. CARREGAR O PEDIDO ANTIGO COM ITENS (Assume que o Repository usa Include)
             var pedidoAntigo = _pedidoRepository.GetById(id);
             if (pedidoAntigo == null) return null;
 
@@ -129,17 +114,13 @@ namespace SmartStock.Services
             pedidoAntigo.DataAtualizacao = DateTime.Now;
 
             var novosItensMap = dto.Itens.ToDictionary(i => i.ProdutoId, i => i);
-
-            // Lista para itens que precisam ser removidos da coleção antiga
             var itensParaRemover = new List<ItemPedido>(); 
 
-            // 2. PROCESSAR ITENS EXISTENTES: Calcular e aplicar a diferença de estoque
+            // 2. PROCESSAR ITENS EXISTENTES
             foreach (var itemAntigo in pedidoAntigo.ItensPedido)
             {
                 if (novosItensMap.TryGetValue(itemAntigo.ProdutoId, out var itemNovoDto))
                 {
-                    // Item existe na nova lista (FOI ALTERADO)
-
                     var diferencaQuantidade = itemNovoDto.Quantidade - itemAntigo.Quantidade;
 
                     if (diferencaQuantidade != 0)
@@ -147,12 +128,8 @@ namespace SmartStock.Services
                         var produto = _produtoRepository.GetById(itemAntigo.ProdutoId);
                         if (produto != null)
                         {
-                            // LÓGICA DE ESTOQUE DE VENDA:
-                            // Se diferenca > 0 (vendeu mais): subtrai (estoque - diferenca)
-                            // Se diferenca < 0 (vendeu menos): adiciona (estoque + |diferenca|)
-                            produto.Estoque -= diferencaQuantidade;
+                            produto.Estoque -= diferencaQuantidade; 
 
-                            // Verificação de estoque após o ajuste
                             if (produto.Estoque < 0)
                                 throw new InvalidOperationException($"Ajuste falhou. Estoque insuficiente para o novo pedido do produto {produto.Nome}.");
 
@@ -160,47 +137,39 @@ namespace SmartStock.Services
                         }
                     }
 
-                    // ATUALIZA O ITEM NO PEDIDO
                     itemAntigo.Quantidade = itemNovoDto.Quantidade;
                     novosItensMap.Remove(itemAntigo.ProdutoId);
                 }
                 else
                 {
-                    // Item NÃO existe na nova lista (FOI REMOVIDO)
-
                     var produto = _produtoRepository.GetById(itemAntigo.ProdutoId);
                     if (produto != null)
                     {
-                        // LÓGICA DE ESTOQUE: Item removido da venda = Repõe o estoque
                         produto.Estoque += itemAntigo.Quantidade;
                         _produtoRepository.Update(produto);
                     }
-                    // Adiciona o item à lista de remoção (para evitar modificar a coleção no loop)
                     itensParaRemover.Add(itemAntigo);
                 }
             }
             
-            // Remove itens fora do loop
             foreach(var item in itensParaRemover)
             {
                 pedidoAntigo.ItensPedido.Remove(item);
             }
 
-            // 3. PROCESSAR NOVOS ITENS: Itens que restaram no novosItensMap (FORAM ADICIONADOS)
+            // 3. PROCESSAR NOVOS ITENS
             foreach (var itemNovoDto in novosItensMap.Values)
             {
                 var produto = _produtoRepository.GetById(itemNovoDto.ProdutoId);
                 if (produto == null)
                     throw new KeyNotFoundException($"Produto com Id={itemNovoDto.ProdutoId} não encontrado.");
 
-                // LÓGICA DE ESTOQUE: Subtrai a nova quantidade do estoque
                 if (produto.Estoque < itemNovoDto.Quantidade)
                     throw new InvalidOperationException($"Estoque insuficiente para o novo item {produto.Nome}. Disponível: {produto.Estoque}");
 
                 produto.Estoque -= itemNovoDto.Quantidade;
                 _produtoRepository.Update(produto);
 
-                // CRIA E ADICIONA NOVO ITEM
                 var itemPedido = new ItemPedido
                 {
                     ProdutoId = produto.Id,
@@ -211,8 +180,81 @@ namespace SmartStock.Services
                 pedidoAntigo.ItensPedido.Add(itemPedido);
             }
 
-            // 4. Salva as mudanças do Pedido
-            return _pedidoRepository.PutPedido(id, pedidoAntigo);
+            var pedidoAtualizado = _pedidoRepository.PutPedido(id, pedidoAntigo);
+            
+            // Recarrega para garantir que as relações (Produto) estejam carregadas para o DTO
+            var pedidoCompleto = _pedidoRepository.GetById(pedidoAtualizado.Id);
+            return MapToResponseDTO(pedidoCompleto);
+        }
+        
+        public PedidoVendaResponseDTO PatchPedido(int id, PedidoVenda pedido)
+        {
+            var pedidoAtualizado = _pedidoRepository.PatchPedido(id, pedido);
+            return MapToResponseDTO(pedidoAtualizado);
+        }
+
+        // ----------------------------------------------------------------
+        // MÉTODO DELETE (Mantém o retorno da Entidade)
+        // ----------------------------------------------------------------
+
+        public PedidoVenda Delete(int id)
+        {
+            var pedido = _pedidoRepository.GetById(id);
+            if (pedido == null) return null;
+
+            foreach (var item in pedido.ItensPedido)
+            {
+                var produto = _produtoRepository.GetById(item.ProdutoId);
+                if (produto != null)
+                {
+                    produto.Estoque += item.Quantidade;
+                    _produtoRepository.Update(produto);
+                }
+            }
+
+            return _pedidoRepository.Delete(id);
+        }
+        
+        // ----------------------------------------------------------------
+        // MÉTODO DE MAPEAMENTO (PRIVADO)
+        // ----------------------------------------------------------------
+
+        private PedidoVendaResponseDTO MapToResponseDTO(PedidoVenda pedido)
+        {
+            if (pedido == null) return null;
+            
+            return new PedidoVendaResponseDTO
+            {
+                Id = pedido.Id,
+                DataCriacao = pedido.DataCriacao,
+                DataAtualizacao = pedido.DataAtualizacao,
+                ValorTotal = pedido.ValorTotal,
+                
+                ClienteNome = pedido.ClienteNome,
+                TelefoneCliente = pedido.TelefoneCliente,
+
+                // Converte o Enum para int para simplificar o DTO
+                TipoEntrega = (int)pedido.TipoEntrega,
+                EnderecoEntrega = pedido.EnderecoEntrega,
+                BairroEntrega = pedido.BairroEntrega,
+                NumeroEnderecoEntrega = pedido.NumeroEnderecoEntrega,
+                LojaRetirada = pedido.LojaRetirada,
+                
+                Itens = pedido.ItensPedido?
+                    .Select(item => new ItemVendaResponseDTO
+                    {
+                        Id = item.Id,
+                        ProdutoId = item.ProdutoId,
+                        // Mapeia os dados do produto que foi carregado
+                        NomeProduto = item.Produto?.Nome, 
+                        PrecoUnitario = item.PrecoUnitario,
+                        Quantidade = item.Quantidade,
+                        UnidadeMedida = item.Produto?.UnidadeMedida,
+                        EstoqueAtual = item.Produto != null ? item.Produto.Estoque : 0
+                    })
+                    .ToList()
+                    ?? new List<ItemVendaResponseDTO>()
+            };
         }
     }
 }

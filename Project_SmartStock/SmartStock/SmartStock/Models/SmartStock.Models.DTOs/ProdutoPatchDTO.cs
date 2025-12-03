@@ -1,6 +1,6 @@
 ﻿namespace SmartStock.Models.SmartStock.Models.DTOs
 {
-    public class ProdutoPatchDTO : EntidadeBase
+    public class ProdutoPatchDTO
     {
         public string? Nome { get; set; }
         public int? Codigo { get; set; }
@@ -8,6 +8,5 @@
         public decimal? PrecoUnitario { get; set; }
         public string? UnidadeMedida { get; set; }
         public List<FornecedorProdutoPostDTO>? Fornecedores { get; set; }
-
     }
 }

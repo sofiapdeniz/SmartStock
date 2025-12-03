@@ -1,6 +1,11 @@
-﻿using SmartStock.Models;
+﻿// EM SmartStock.Repository/ProdutoRepository.cs
+
+using SmartStock.Models;
 using SmartStock.Data;
 using SmartStock.Models.SmartStock.Models.DTOs;
+using Microsoft.EntityFrameworkCore; // IMPORTANTE para usar o .Include()
+using System.Linq; // IMPORTANTE para usar ToList() e FirstOrDefault()
+using System.Collections.Generic; // IMPORTANTE para usar List<T>
 
 namespace SmartStock.Repository
 {
@@ -23,9 +28,15 @@ namespace SmartStock.Repository
             return produto;
         }
 
-        public Produto GetById(int id) => _context.ProdutoTable.FirstOrDefault(f => f.Id == id);
+        public Produto GetById(int id) => _context.ProdutoTable
+            // CORREÇÃO: Inclui a coleção M:N Fornecedores
+            .Include(p => p.Fornecedores) 
+            .FirstOrDefault(f => f.Id == id);
 
-        public List<Produto> GetProdutos() => _context.ProdutoTable.ToList();
+        public List<Produto> GetProdutos() => _context.ProdutoTable
+            // CORREÇÃO: Inclui a coleção M:N Fornecedores
+            .Include(p => p.Fornecedores) 
+            .ToList();
 
         public Produto PatchProduto(int id, ProdutoPatchDTO dto)
         {
