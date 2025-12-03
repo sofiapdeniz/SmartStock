@@ -1,6 +1,7 @@
 ﻿using SmartStock.Models;
 using SmartStock.Data;
 using SmartStock.Models.SmartStock.Models.DTOs;
+using Microsoft.EntityFrameworkCore; // Importante para usar .Include() e .ThenInclude()
 
 namespace SmartStock.Repository
 {
@@ -13,9 +14,23 @@ namespace SmartStock.Repository
             _context = context;
         }
 
-        public Fornecedor GetById(int id) => _context.FornecedorTable.FirstOrDefault(f => f.Id == id);
+        public Fornecedor GetById(int id)
+        {
+            // --- AJUSTE APLICADO AQUI ---
+            return _context.FornecedorTable
+                .Include(f => f.ProdutosFornecidos) // 1. Inclui a tabela de junção (FornecedorProduto)
+                .ThenInclude(fp => fp.Produto)      // 2. A partir da junção, inclui o objeto Produto
+                .FirstOrDefault(f => f.Id == id);
+        }
 
-        public List<Fornecedor> GetFornecedores() => _context.FornecedorTable.ToList();
+        public List<Fornecedor> GetFornecedores()
+        {
+            // --- AJUSTE APLICADO AQUI ---
+            return _context.FornecedorTable
+                .Include(f => f.ProdutosFornecidos) // 1. Inclui a tabela de junção (FornecedorProduto)
+                .ThenInclude(fp => fp.Produto)      // 2. A partir da junção, inclui o objeto Produto
+                .ToList();
+        }
 
         public Fornecedor PostFornecedor(FornecedorPostDTO dto)
         {
