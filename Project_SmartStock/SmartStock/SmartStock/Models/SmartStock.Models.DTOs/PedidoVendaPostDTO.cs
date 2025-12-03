@@ -12,6 +12,7 @@ namespace SmartStock.Models.SmartStock.Models.DTOs
         public string BairroEntrega { get; set; }
         public int NumeroEnderecoEntrega { get; set; }
         public string TelefoneCliente { get; set; }
+        public string? LojaRetirada { get; set; }
         public List<ItemPedidoDTO> Itens { get; set; }
     }
 }

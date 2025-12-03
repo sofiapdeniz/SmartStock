@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SmartStock.Controllers;
 using SmartStock.Models;
 using System.Linq;
+using Microsoft.Data.SqlClient; // Importante para capturar o erro SQL
 
 namespace SmartStock.Data
 {
@@ -13,27 +13,30 @@ namespace SmartStock.Data
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // --- 1. CONFIGURAÇÃO DE ITEMPEDIDO (CHAVE COMPOSTA) ---
+            // --- 1. CONFIGURAÇÃO DE ITEMPEDIDO (CHAVE ESTRANGEIRA SEPARADA) ---
             
-            // 1.1 Chave Composta: PedidoId + ProdutoId
+            // 1.1 Relacionamento ItemPedido -> PedidoCompra 
             modelBuilder.Entity<ItemPedido>()
-                .HasKey(ip => new { ip.PedidoId, ip.ProdutoId });
-            
-            // 1.2 Relacionamento ItemPedido -> PedidoCompra 
-            modelBuilder.Entity<ItemPedido>()
-                .HasOne<PedidoCompra>(ip => ip.Pedido as PedidoCompra)
+                .HasOne(ip => ip.PedidoCompra)
                 .WithMany(pc => pc.ItensPedido)
-                .HasForeignKey(ip => ip.PedidoId)
-                .IsRequired(); 
+                .HasForeignKey(ip => ip.PedidoCompraId)
+                .IsRequired(false); // Não é obrigatório
             
-            // 1.3 Relacionamento ItemPedido -> Produto 
+            // 1.2 Relacionamento ItemPedido -> PedidoVenda 
+            modelBuilder.Entity<ItemPedido>()
+                .HasOne(ip => ip.PedidoVenda)
+                .WithMany(pv => pv.ItensPedido)
+                .HasForeignKey(ip => ip.PedidoVendaId)
+                .IsRequired(false); // Não é obrigatório
+            
+            // 1.3 Relacionamento ItemPedido -> Produto (Mantido)
             modelBuilder.Entity<ItemPedido>()
                 .HasOne(ip => ip.Produto)
                 .WithMany(p => p.ItensPedido)
                 .HasForeignKey(ip => ip.ProdutoId);
 
             
-            // --- 2. CONFIGURAÇÃO FORNECEDORPRODUTO (M:N) ---
+            // --- 2. CONFIGURAÇÃO FORNECEDORPRODUTO (M:N) (Mantido) ---
             
             modelBuilder.Entity<FornecedorProduto>()
                 .HasKey(fp => new { fp.FornecedorId, fp.ProdutoId });
@@ -46,7 +49,7 @@ namespace SmartStock.Data
                 .WithMany(p => p.Fornecedores)
                 .HasForeignKey(fp => fp.ProdutoId);
 
-            // 3. Configuração PedidoCompra -> Fornecedor 
+            // 3. Configuração PedidoCompra -> Fornecedor (Mantido)
             modelBuilder.Entity<PedidoCompra>()
                 .HasOne(pc => pc.Fornecedor)
                 .WithMany()
@@ -56,8 +59,7 @@ namespace SmartStock.Data
 
         public override int SaveChanges()
         {
-            // --- CORREÇÃO: ITEMPEDIDO FOI REMOVIDO DO FILTRO ---
-            // Agora apenas entidades que herdam de EntidadeBase (e têm DataCriacao/DataAtualizacao) são processadas.
+            // Lógica de DataCriacao/DataAtualizacao (Mantida)
             var entries = ChangeTracker.Entries()
                 .Where(e => e.Entity is Fornecedor 
                          || e.Entity is Produto 
@@ -76,8 +78,29 @@ namespace SmartStock.Data
                     ((dynamic)entry.Entity).DataAtualizacao = DateTime.Now;
                 }
             }
+            
+            // 🚨 NOVO: BLOCO TRY-CATCH PARA CAPTURAR A EXCEÇÃO SQL 🚨
+            try
+            {
+                return base.SaveChanges();
+            }
+            catch (DbUpdateException ex)
+            {
+                // Tenta encontrar a exceção SQL interna
+                var sqlException = ex.InnerException?.InnerException as SqlException;
 
-            return base.SaveChanges();
+                if (sqlException != null)
+                {
+                    // Imprime no console (ou log) o erro SQL específico
+                    Console.WriteLine("\n--- ERRO CRÍTICO NO SAVECHANGES (DIAGNÓSTICO SQL) ---");
+                    Console.WriteLine($"Número do Erro SQL: {sqlException.Number}");
+                    Console.WriteLine($"Mensagem SQL: {sqlException.Message}");
+                    Console.WriteLine("------------------------------------------------------\n");
+                }
+                
+                // Relança a exceção original para que o Service/Controller receba o erro.
+                throw new InvalidOperationException("An error occurred while saving the entity changes. See the inner exception for details.", ex);
+            }
         }
 
         public DbSet<Produto> ProdutoTable { get; set; }
