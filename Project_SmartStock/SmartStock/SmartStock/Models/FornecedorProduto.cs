@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Serialization;
-using SmartStock.Models; // Já existe na sua amostra
+using SmartStock.Models;
 
 namespace SmartStock.Models
 {
@@ -12,11 +12,11 @@ namespace SmartStock.Models
         public int ProdutoId { get; set; }
 
         [JsonIgnore]
-        public Produto Produto { get; set; }
+        public Produto Produto { get; set; } // O FornecedorProdutoPostDTO não precisa disso.
 
         public int FornecedorId { get; set; }
 
         [JsonIgnore]
-        public Fornecedor Fornecedor { get; set; }
+        public Fornecedor Fornecedor { get; set; } // O FornecedorProdutoPostDTO não precisa disso.
     }
 }
