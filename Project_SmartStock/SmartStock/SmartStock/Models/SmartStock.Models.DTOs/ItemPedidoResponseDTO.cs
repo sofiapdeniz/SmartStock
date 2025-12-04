@@ -1,6 +1,4 @@
-﻿// EM SmartStock.Models.SmartStock.Models.DTOs/ItemPedidoResponseDTO.cs
-
-using System;
+﻿using System;
 
 namespace SmartStock.Models.SmartStock.Models.DTOs
 {

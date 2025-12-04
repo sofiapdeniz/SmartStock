@@ -17,15 +17,10 @@ namespace SmartStock.Models
         public int? PedidoCompraId { get; set; } // Opcional (Nullable int)
         [JsonIgnore]
         public PedidoCompra PedidoCompra { get; set; }
-        
-        // 2. Vínculo com PedidoVenda
-        public int? PedidoVendaId { get; set; } // Opcional (Nullable int)
+        public int? PedidoVendaId { get; set; }
         [JsonIgnore]
         public PedidoVenda PedidoVenda { get; set; }
-        
-        // --- Fim das Novas FKs ---
 
-        // Vínculo com Produto (mantido)
         public int ProdutoId { get; set; }
         public Produto Produto { get; set; }
     }

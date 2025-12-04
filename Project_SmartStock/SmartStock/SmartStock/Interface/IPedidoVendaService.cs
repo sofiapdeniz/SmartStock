@@ -1,6 +1,4 @@
-﻿// EM SmartStock.Interface/IPedidoVendaService.cs
-
-using SmartStock.Models;
+﻿using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
 using System.Collections.Generic;
 

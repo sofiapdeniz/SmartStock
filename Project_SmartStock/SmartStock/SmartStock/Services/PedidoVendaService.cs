@@ -1,6 +1,4 @@
-﻿// EM SmartStock.Services/PedidoVendaService.cs
-
-using SmartStock.Interface;
+﻿using SmartStock.Interface;
 using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
 using SmartStock.Repository;
@@ -21,10 +19,6 @@ namespace SmartStock.Services
             _produtoRepository = produtoRepository;
         }
 
-        // ----------------------------------------------------------------
-        // MÉTODOS GET - AGORA RETORNAM DTOs DE RESPOSTA
-        // ----------------------------------------------------------------
-
         public PedidoVendaResponseDTO GetById(int id)
         {
             var pedido = _pedidoRepository.GetById(id);
@@ -37,10 +31,6 @@ namespace SmartStock.Services
             var pedidos = _pedidoRepository.GetPedidos();
             return pedidos.Select(MapToResponseDTO).ToList();
         }
-
-        // ----------------------------------------------------------------
-        // MÉTODOS POST, PUT, PATCH - AGORA RETORNAM DTOs DE RESPOSTA
-        // ----------------------------------------------------------------
 
         public PedidoVendaResponseDTO PostPedido(PedidoVendaPostDTO dto)
         {
@@ -92,7 +82,6 @@ namespace SmartStock.Services
                 _produtoRepository.Update(produto);
             }
             
-            // Recarrega para garantir que as relações (Produto) estejam carregadas para o DTO
             var pedidoCompleto = _pedidoRepository.GetById(pedidoSalvo.Id);
             return MapToResponseDTO(pedidoCompleto);
         }
@@ -103,7 +92,6 @@ namespace SmartStock.Services
             var pedidoAntigo = _pedidoRepository.GetById(id);
             if (pedidoAntigo == null) return null;
 
-            // Mapeamento de propriedades principais
             pedidoAntigo.ClienteNome = dto.ClienteNome;
             pedidoAntigo.ValorTotal = dto.ValorTotal;
             pedidoAntigo.TipoEntrega = dto.TipoEntrega;
@@ -116,7 +104,6 @@ namespace SmartStock.Services
             var novosItensMap = dto.Itens.ToDictionary(i => i.ProdutoId, i => i);
             var itensParaRemover = new List<ItemPedido>(); 
 
-            // 2. PROCESSAR ITENS EXISTENTES
             foreach (var itemAntigo in pedidoAntigo.ItensPedido)
             {
                 if (novosItensMap.TryGetValue(itemAntigo.ProdutoId, out var itemNovoDto))
@@ -157,7 +144,6 @@ namespace SmartStock.Services
                 pedidoAntigo.ItensPedido.Remove(item);
             }
 
-            // 3. PROCESSAR NOVOS ITENS
             foreach (var itemNovoDto in novosItensMap.Values)
             {
                 var produto = _produtoRepository.GetById(itemNovoDto.ProdutoId);
@@ -182,7 +168,6 @@ namespace SmartStock.Services
 
             var pedidoAtualizado = _pedidoRepository.PutPedido(id, pedidoAntigo);
             
-            // Recarrega para garantir que as relações (Produto) estejam carregadas para o DTO
             var pedidoCompleto = _pedidoRepository.GetById(pedidoAtualizado.Id);
             return MapToResponseDTO(pedidoCompleto);
         }
@@ -192,10 +177,6 @@ namespace SmartStock.Services
             var pedidoAtualizado = _pedidoRepository.PatchPedido(id, pedido);
             return MapToResponseDTO(pedidoAtualizado);
         }
-
-        // ----------------------------------------------------------------
-        // MÉTODO DELETE (Mantém o retorno da Entidade)
-        // ----------------------------------------------------------------
 
         public PedidoVenda Delete(int id)
         {
@@ -214,10 +195,6 @@ namespace SmartStock.Services
 
             return _pedidoRepository.Delete(id);
         }
-        
-        // ----------------------------------------------------------------
-        // MÉTODO DE MAPEAMENTO (PRIVADO)
-        // ----------------------------------------------------------------
 
         private PedidoVendaResponseDTO MapToResponseDTO(PedidoVenda pedido)
         {
@@ -233,7 +210,6 @@ namespace SmartStock.Services
                 ClienteNome = pedido.ClienteNome,
                 TelefoneCliente = pedido.TelefoneCliente,
 
-                // Converte o Enum para int para simplificar o DTO
                 TipoEntrega = (int)pedido.TipoEntrega,
                 EnderecoEntrega = pedido.EnderecoEntrega,
                 BairroEntrega = pedido.BairroEntrega,
@@ -245,7 +221,6 @@ namespace SmartStock.Services
                     {
                         Id = item.Id,
                         ProdutoId = item.ProdutoId,
-                        // Mapeia os dados do produto que foi carregado
                         NomeProduto = item.Produto?.Nome, 
                         PrecoUnitario = item.PrecoUnitario,
                         Quantidade = item.Quantidade,

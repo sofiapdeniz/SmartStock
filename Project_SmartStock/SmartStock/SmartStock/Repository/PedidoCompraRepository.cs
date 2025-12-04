@@ -1,9 +1,9 @@
 ﻿using SmartStock.Models;
 using SmartStock.Data;
 using SmartStock.Models.SmartStock.Models.DTOs;
-using Microsoft.EntityFrameworkCore; // ESSENCIAL: Necessário para usar .Include() e DbUpdateException
+using Microsoft.EntityFrameworkCore;
 using System; 
-using System.Linq; // Necessário para FirstOrDefault e ToList
+using System.Linq;
 
 namespace SmartStock.Repository
 {
@@ -25,28 +25,24 @@ namespace SmartStock.Repository
             _context.SaveChanges();
             return pedido;
         }
-
-        // --- CORREÇÃO APLICADA: EAGER LOADING com .Include() e .ThenInclude() ---
         
         public PedidoCompra GetById(int id)
         {
             return _context.PedidoCompraTable
-                .Include(pc => pc.Fornecedor) // Inclui o fornecedor
-                .Include(pc => pc.ItensPedido) // Inclui a coleção de itens
-                    .ThenInclude(ip => ip.Produto) // Para cada item, inclui o Produto (onde está o Estoque)
+                .Include(pc => pc.Fornecedor)
+                .Include(pc => pc.ItensPedido)
+                    .ThenInclude(ip => ip.Produto)
                 .FirstOrDefault(pc => pc.Id == id);
         }
 
         public List<PedidoCompra> GetPedidos()
         {
             return _context.PedidoCompraTable
-                .Include(pc => pc.Fornecedor) // Inclui o fornecedor
-                .Include(pc => pc.ItensPedido) // Inclui a coleção de itens
-                    .ThenInclude(ip => ip.Produto) // Para cada item, inclui o Produto (onde está o Estoque)
+                .Include(pc => pc.Fornecedor)
+                .Include(pc => pc.ItensPedido)
+                    .ThenInclude(ip => ip.Produto)
                 .ToList();
         }
-        
-        // ------------------------------------------------------------------------
 
         public PedidoCompra PatchPedido(int id, PedidoCompraPatchDTO dto)
         {
@@ -62,7 +58,6 @@ namespace SmartStock.Repository
             return pedido;
         }
 
-        // --- MÉTODO POST (MANTIDO) ---
         public PedidoCompra PostPedido(PedidoCompra pedido)
         {
             try
@@ -80,7 +75,6 @@ namespace SmartStock.Repository
                 throw;
             }
         }
-        // -----------------------------
 
         public PedidoCompra PutPedido(int id, PedidoCompraPutDTO dto)
         {

@@ -1,6 +1,4 @@
-﻿// EM SmartStock.Services/PedidoCompraService.cs
-
-using SmartStock.Interface;
+﻿using SmartStock.Interface;
 using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
 using SmartStock.Repository;
@@ -28,15 +26,11 @@ namespace SmartStock.Services
             _fornecedorRepository = fornecedorRepository;
         }
 
-        // ----------------------------------------------------------------
-        // MÉTODOS GET - AGORA RETORNAM DTOs DE RESPOSTA
-        // ----------------------------------------------------------------
-
         public PedidoCompraResponseDTO GetById(int id)
         {
             var pedido = _pedidoRepository.GetById(id);
             if (pedido == null) return null;
-            return MapToResponseDTO(pedido); // Mapeia para o DTO antes de retornar
+            return MapToResponseDTO(pedido);
         }
 
         public List<PedidoCompraResponseDTO> GetPedidos()
@@ -44,10 +38,6 @@ namespace SmartStock.Services
             var pedidos = _pedidoRepository.GetPedidos();
             return pedidos.Select(MapToResponseDTO).ToList(); 
         }
-
-        // ----------------------------------------------------------------
-        // MÉTODOS POST, PUT, PATCH E DELETE (Ajustados para DTO de Saída)
-        // ----------------------------------------------------------------
 
         public PedidoCompraResponseDTO PostPedido(PedidoCompraPostDTO newPedido)
         {
@@ -87,7 +77,7 @@ namespace SmartStock.Services
                     PrecoUnitario = produto.PrecoUnitario,
                     UnidadeMedida = produto.UnidadeMedida
                 };
-                
+
                 pedido.ItensPedido.Add(itemPedido);
             }
 
@@ -101,7 +91,7 @@ namespace SmartStock.Services
             var pedidoCompleto = _pedidoRepository.GetById(pedidoSalvo.Id); 
             return MapToResponseDTO(pedidoCompleto);
         }
-        
+
         public PedidoCompraResponseDTO PutPedido(int id, PedidoCompraPutDTO dto)
         {
             var pedidoAntigo = _pedidoRepository.GetById(id); 
@@ -110,7 +100,7 @@ namespace SmartStock.Services
             pedidoAntigo.NomeFornecedor = dto.NomeFornecedor;
             pedidoAntigo.CondicaoPagamento = dto.CondicaoPagamento;
             pedidoAntigo.Contato = dto.Contato;
-            
+
             var novosItensMap = dto.Itens.ToDictionary(i => i.ProdutoId, i => i);
 
             foreach (var itemAntigo in pedidoAntigo.ItensPedido.ToList())
@@ -118,7 +108,7 @@ namespace SmartStock.Services
                 if (novosItensMap.TryGetValue(itemAntigo.ProdutoId, out var itemNovoDto))
                 {
                     var diferencaQuantidade = itemNovoDto.Quantidade - itemAntigo.Quantidade;
-                    
+
                     if (diferencaQuantidade != 0)
                     {
                         var produto = _produtoRepository.GetById(itemAntigo.ProdutoId);
@@ -128,7 +118,7 @@ namespace SmartStock.Services
                             _produtoRepository.Update(produto);
                         }
                     }
-                    
+
                     itemAntigo.Quantidade = itemNovoDto.Quantidade;
                     novosItensMap.Remove(itemAntigo.ProdutoId);
                 }
@@ -194,11 +184,6 @@ namespace SmartStock.Services
             
             return _pedidoRepository.Delete(id);
         }
-
-        // ----------------------------------------------------------------
-        // MÉTODO DE MAPEAMENTO (PRIVADO) - ATUALIZADO
-        // ----------------------------------------------------------------
-
         private PedidoCompraResponseDTO MapToResponseDTO(PedidoCompra pedido)
         {
             if (pedido == null) return null;
@@ -222,12 +207,9 @@ namespace SmartStock.Services
                         NomeProduto = item.Produto?.Nome, 
                         PrecoUnitario = item.PrecoUnitario,
                         Quantidade = item.Quantidade,
-                        
-                        // --- MAPEAMENTO DOS NOVOS CAMPOS ---
-                        // Acessa as propriedades do objeto Produto que foi carregado
+
                         UnidadeMedida = item.Produto?.UnidadeMedida, 
-                        Estoque = item.Produto != null ? item.Produto.Estoque : 0 // Proteção extra contra nulo
-                        // ----------------------------------
+                        Estoque = item.Produto != null ? item.Produto.Estoque : 0
                     })
                     .ToList()
                     ?? new List<ItemPedidoResponseDTO>()

@@ -8,6 +8,6 @@ namespace SmartStock.Models.SmartStock.Models.DTOs
         public decimal PrecoUnitario { get; set; }
         public int Quantidade { get; set; }
         public string UnidadeMedida { get; set; }
-        public int EstoqueAtual { get; set; } // Mantido para auditoria
+        public int EstoqueAtual { get; set; }
     }
 }

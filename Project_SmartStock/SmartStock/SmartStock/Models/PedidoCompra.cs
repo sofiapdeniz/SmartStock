@@ -12,7 +12,5 @@ namespace SmartStock.Models
         public Fornecedor Fornecedor { get; set; }
 
         public ICollection<ItemPedido> ItensPedido { get; set; }
-        //public List<ItemPedido> ItensPedido { get; set; }
-
     }
 }

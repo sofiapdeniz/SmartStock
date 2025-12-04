@@ -4,7 +4,7 @@ using SmartStock.Models;
 using SmartStock.Data;
 using SmartStock.Models.SmartStock.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
-using System.Linq; // Adicionar se não estiver presente
+using System.Linq;
 
 namespace SmartStock.Repository
 {
@@ -19,7 +19,6 @@ namespace SmartStock.Repository
 
         public Fornecedor GetById(int id)
         {
-            // Mantido o .Include para carregar dados na resposta GET
             return _context.FornecedorTable
                 .Include(f => f.ProdutosFornecidos)
                 .ThenInclude(fp => fp.Produto)
@@ -28,14 +27,11 @@ namespace SmartStock.Repository
 
         public List<Fornecedor> GetFornecedores()
         {
-            // Mantido o .Include para carregar dados na resposta GET
             return _context.FornecedorTable
                 .Include(f => f.ProdutosFornecidos)
                 .ThenInclude(fp => fp.Produto)
                 .ToList();
         }
-
-        // CORREÇÃO: Recebe a Entidade completa, mapeada pelo Service
         public Fornecedor PostFornecedor(Fornecedor fornecedor) 
         {
             _context.FornecedorTable.Add(fornecedor);
@@ -43,15 +39,12 @@ namespace SmartStock.Repository
             return fornecedor;
         }
 
-        // CORREÇÃO: Recebe a Entidade e não o DTO para o PUT
         public Fornecedor PutFornecedor(Fornecedor fornecedor) 
         {
             _context.FornecedorTable.Update(fornecedor);
             _context.SaveChanges();
             return fornecedor;
         }
-
-        // CORREÇÃO: Recebe a Entidade e não o DTO para o PATCH
         public Fornecedor PatchFornecedor(Fornecedor fornecedor) 
         {
             _context.FornecedorTable.Update(fornecedor);

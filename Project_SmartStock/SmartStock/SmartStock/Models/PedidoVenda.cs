@@ -13,7 +13,6 @@ namespace SmartStock.Models
         public string TelefoneCliente { get; set; }
         public string? LojaRetirada { get; set; }
         public ICollection<ItemPedido> ItensPedido { get; set; }
-        //public List<ItemPedido> ItensPedido { get; set; }
 
         public enum TipoEntregaEnum
         {

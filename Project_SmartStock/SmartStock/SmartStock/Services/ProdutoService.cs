@@ -1,19 +1,17 @@
-﻿// EM SmartStock.Services/ProdutoService.cs
-
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartStock.Interface;
 using SmartStock.Models;
 using SmartStock.Models.SmartStock.Models.DTOs;
 using SmartStock.Repository;
 using System.Data;
-using System.Linq; // NECESSÁRIO para usar Select e ToList
-using System.Collections.Generic; // NECESSÁRIO para usar List<T>
-using System; // NECESSÁRIO para usar ArgumentException e DateTime
+using System.Linq;
+using System.Collections.Generic;
+using System;
 
 namespace SmartStock.Services
 {
-    // AVISO: IProdutoService DEVE ter os métodos GET retornando ProdutoResponseDTO
+
     public class ProdutoService : IProdutoService 
     {
         private readonly IProdutoRepository _produtoRepository;
@@ -24,8 +22,7 @@ namespace SmartStock.Services
             _produtoRepository = produtoRepository;
             _fornecedorRepository = fornecedorRepository;
         }
-        
-        // CORREÇÃO CS8603: Adiciona '?'
+
         public Produto? Delete(int id)
         {
             var produto = _produtoRepository.GetById(id);
@@ -35,8 +32,6 @@ namespace SmartStock.Services
             return _produtoRepository.Delete(id);
         }
 
-        // CORREÇÃO CS0738: Retorna ProdutoResponseDTO? (para coincidir com a interface)
-        // LÓGICA DE MAPEAMENTO RESTAURADA
         public ProdutoResponseDTO? GetById(int id)
         {
             var produto = _produtoRepository.GetById(id);
@@ -44,8 +39,6 @@ namespace SmartStock.Services
             return MapToResponseDTO(produto);
         }
 
-        // CORREÇÃO CS0738: Retorna List<ProdutoResponseDTO> (para coincidir com a interface)
-        // LÓGICA DE MAPEAMENTO RESTAURADA
         public List<ProdutoResponseDTO> GetProdutos()
         {
             var produtos = _produtoRepository.GetProdutos();
@@ -53,7 +46,6 @@ namespace SmartStock.Services
             return produtos.Select(MapToResponseDTO).ToList();
         }
 
-        // CORREÇÃO CS8603: Adiciona '?'
         public Produto? PatchProduto(int id, ProdutoPatchDTO dto)
         {
             var produto = _produtoRepository.GetById(id);
@@ -76,12 +68,10 @@ namespace SmartStock.Services
             if (dto.UnidadeMedida != null)
                 produto.UnidadeMedida = dto.UnidadeMedida;
 
-            // OBS: Verifique se o PatchProduto no Repository aceita (id, dto) ou (entidade)
             return _produtoRepository.PatchProduto(id, dto); 
         }
 
         
-        // Mantém Produto, se o repositório garantir que nunca falhará ou lançará exceção.
         public Produto PostProduto(ProdutoPostDTO dto)
         {
             if (dto == null)
@@ -120,7 +110,6 @@ namespace SmartStock.Services
             return _produtoRepository.PostProduto(produto);
         }
 
-        // CORREÇÃO CS8603: Adiciona '?'
         public Produto? PutProduto(int id, ProdutoPutDTO dto)
         {
             var produto = _produtoRepository.GetById(id);
@@ -136,11 +125,9 @@ namespace SmartStock.Services
 
             return _produtoRepository.PutProduto(id, dto);
         }
-
-        // CORREÇÃO CS8603: Adiciona '?' (Permite que o mapeamento retorne null se o produto for null)
         private ProdutoResponseDTO? MapToResponseDTO(Produto? produto)
         {
-            if (produto == null) return null; // OK
+            if (produto == null) return null;
 
             return new ProdutoResponseDTO
             {

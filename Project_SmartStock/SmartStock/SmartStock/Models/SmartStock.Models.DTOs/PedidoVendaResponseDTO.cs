@@ -7,12 +7,10 @@ namespace SmartStock.Models.SmartStock.Models.DTOs
         public DateTime DataAtualizacao { get; set; }
         public decimal ValorTotal { get; set; }
         
-        // Detalhes do Cliente
         public string ClienteNome { get; set; }
         public string TelefoneCliente { get; set; }
 
-        // Detalhes de Entrega/Retirada
-        public int TipoEntrega { get; set; } // Usando int para o Enum
+        public int TipoEntrega { get; set; }
         public string? EnderecoEntrega { get; set; }
         public string? BairroEntrega { get; set; }
         public int? NumeroEnderecoEntrega { get; set; }

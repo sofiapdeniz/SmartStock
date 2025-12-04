@@ -1,6 +1,4 @@
-﻿// EM SmartStock.Repository/PedidoVendaRepository.cs
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SmartStock.Data;
 using SmartStock.Models;
 using System.Collections.Generic;
@@ -29,19 +27,17 @@ namespace SmartStock.Repository
 
         public PedidoVenda GetById(int id)
         {
-            // --- AJUSTADO: Inclui Itens e o Produto associado ---
             return _context.PedidoVendaTable
                 .Include(p => p.ItensPedido)
-                .ThenInclude(ip => ip.Produto) // NOVO: Garante que o Produto seja carregado
+                .ThenInclude(ip => ip.Produto)
                 .FirstOrDefault(p => p.Id == id);
         }
 
         public List<PedidoVenda> GetPedidos()
         {
-            // --- AJUSTADO: Inclui Itens e o Produto associado ---
             return _context.PedidoVendaTable
                 .Include(p => p.ItensPedido)
-                .ThenInclude(ip => ip.Produto) // NOVO: Garante que o Produto seja carregado
+                .ThenInclude(ip => ip.Produto)
                 .ToList();
         }
 
